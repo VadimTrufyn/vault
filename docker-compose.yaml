@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  vault:
+    image: hashicorp/vault
+    container_name: vault
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vault.entrypoints=https"
+      - "traefik.http.routers.vault.rule=Host(`$VAULT_HOST`)"
+      - "traefik.http.routers.vault.tls=true"
+      - "traefik.http.routers.vault.tls.certresolver=letsEncrypt"
+      - "traefik.http.services.vault-service.loadbalancer.server.port=8200"
+      - "traefik.docker.network=webproxy"
+    entrypoint: vault server -config=/vault/config/vault.hcl
+    environment:
+      VAULT_API_ADDR: "http://0.0.0.0:8200"
+    volumes:
+      - ./data/file:/vault/file
+      - ./data/helpers:/helpers
+      - ./data/config/:/vault/config/
+      - ./data/logs/:/vault/logs/
+      - ./data/plugins/:/vault/plugins/
+    cap_add:
+      - IPC_LOCK
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8200 || exit 1
+      interval: 10s
+      retries: 12
+      start_period: 10s
+      timeout: 10s
+    expose:
+      - 8200
+    networks:
+      - vault_net
+      - webproxy
+
+networks:
+  vault_net:
+    name: vault_net
+  webproxy:
+    name: webproxy

@@ -1,0 +1,6 @@
+data/file/*
+data/logs/*
+.env
+keys.json
+
+!.gitkeep

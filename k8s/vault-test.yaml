@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vault-test
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sa-vault
+  namespace: vault-test
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-test-deployment
+  namespace: vault-test
+  labels:
+    app: vault-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault-test
+  template:
+    metadata:
+      labels:
+        app: vault-test
+      annotations:
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/role: 'k8s-role'
+        vault.hashicorp.com/agent-inject-secret-credentials: 'secret/k8s/config'
+        vault.hashicorp.com/agent-inject-template-credentials: |
+          {{- with secret "secret/k8s/config" -}}
+          postgresql://{{ .Data.data.username }}:{{ .Data.data.password }}@{{ .Data.data.psqlhost }}:5432/{{ .Data.data.database }}
+          {{- end -}}
+    spec:
+      serviceAccountName: sa-vault
+      containers:
+        - name: app
+          image: nginx

@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  psql:
+    image: postgres:11-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: testdb1
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    expose:
+      - 5432
+    networks:
+      - vault_net
+
+networks:
+  vault_net:
+    name: vault_net
+
+volumes:
+  pgdata:
